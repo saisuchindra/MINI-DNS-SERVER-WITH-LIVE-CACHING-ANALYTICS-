@@ -14,6 +14,17 @@ python run.py
 
 API docs: `http://127.0.0.1:8000/docs`; DNS listener: `127.0.0.1:5353`.
 
+Run the frontend in a second terminal:
+
+```powershell
+cd frontend
+Copy-Item .env.local.example .env.local
+npm install
+npm run dev
+```
+
+Open the operations console at `http://localhost:3000`.
+
 Try a manual resolution:
 
 ```powershell
