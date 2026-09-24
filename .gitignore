@@ -7,3 +7,4 @@ data/*.db
 logs/*.log
 frontend/node_modules/
 frontend/.next/
+frontend/out/
