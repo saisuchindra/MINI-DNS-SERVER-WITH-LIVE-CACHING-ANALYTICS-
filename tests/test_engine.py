@@ -13,3 +13,11 @@ def test_miss_then_real_cache_hit(tmp_path):
         return await e.query("example.com"), await e.query("example.com")
     first, second=asyncio.run(run())
     assert first['status']=='MISS' and first['ip_addresses']==['1.2.3.4'] and second['status']=='HIT'
+
+def test_summary_reports_queries_per_second(tmp_path):
+    async def run():
+        e=DNSEngine(CacheManager(),Resolver(),Repository(f"sqlite:///{tmp_path/'summary.db'}"),EventHub())
+        await e.query("example.com")
+        return e.summary()
+    summary=asyncio.run(run())
+    assert summary['queries_per_second'] >= 0
