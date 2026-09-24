@@ -1,0 +1,3 @@
+@import "tailwindcss";
+@theme { --color-ink:#07111f; --color-panel:#0b1728; --color-line:#20344e; --color-cyan:#41d6ff; --color-hit:#42d393; --color-miss:#ffb454; }
+*{box-sizing:border-box} body{margin:0;background:#07111f;color:#dbeafe;font-family:Arial,Helvetica,sans-serif} button,input,select{font:inherit} button{cursor:pointer}.panel{border:1px solid #20344e;background:#0b1728;border-radius:8px}.muted{color:#8ba0bb}.label{font-size:11px;letter-spacing:.12em;color:#8ba0bb;text-transform:uppercase}.focusable:focus-visible{outline:2px solid #41d6ff;outline-offset:2px}
