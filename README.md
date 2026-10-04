@@ -56,3 +56,15 @@ pytest -q
 ```
 
 Configuration is in `.env` (copy `.env.example`). DNS normally uses UDP for ordinary small queries; TCP is supported for larger/special DNS exchanges and uses DNS's two-byte length framing. This project demonstrates application-layer DNS, client-server forwarding, UDP/TCP, IP addressing, cache TTL, latency measurement, traffic load, and real-time monitoring.
+
+## Deploy the API to Render
+
+This repository includes a `render.yaml` Blueprint for the FastAPI analytics service. In Render, create a new Blueprint from this repository and set `CORS_ORIGINS` to the public origin of the deployed frontend, for example:
+
+```text
+https://your-frontend.onrender.com
+```
+
+The service listens on Render's required `$PORT` and exposes the HTTP API, WebSocket analytics endpoint, and API documentation. Render Web Services do not expose arbitrary public UDP ports, so the DNS listener is available only inside the service; use the HTTP `/api/dns/query` endpoint for public queries.
+
+SQLite storage on the free service is ephemeral. Use a managed database and update `DATABASE_URL` if query history must survive redeploys.
