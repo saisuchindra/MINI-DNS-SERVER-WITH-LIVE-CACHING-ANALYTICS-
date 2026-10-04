@@ -1,6 +1,9 @@
-"""Real upstream DNS client: sends original DNS wire packets over UDP or TCP."""
-import asyncio, socket
-from dnslib import DNSRecord, RR, A, AAAA, QTYPE
+"""Real upstream DNS client with a dnspython fallback."""
+import asyncio
+from dnslib import DNSRecord
+import dns.asyncresolver
+import dns.exception
+import dns.rdatatype
 
 class UpstreamError(Exception): pass
 class UpstreamResolver:
@@ -15,33 +18,28 @@ class UpstreamResolver:
                 except Exception as e:
                     # asyncio.TimeoutError has an empty string representation; retain the type.
                     errors.append(f"{server}: {type(e).__name__}: {str(e) or 'no response'}")
-        # Some corporate, campus, and sandbox networks block direct DNS on port 53.
-        # The OS resolver remains a genuine DNS lookup and uses the network's configured resolver.
+        # Some hosted networks block direct DNS on port 53. Use dnspython's
+        # configured resolver as a fallback so every supported record type works.
         try:
-            return await self._system_resolve(request), "system-resolver"
+            return await self._dnspython_resolve(request, protocol), "dnspython"
         except Exception as e:
-            errors.append(f"system resolver: {type(e).__name__}: {str(e) or 'no response'}")
+            errors.append(f"dnspython: {type(e).__name__}: {str(e) or 'no response'}")
         raise UpstreamError("All upstream resolvers failed: " + "; ".join(errors[-3:]))
 
-    async def _system_resolve(self, request: DNSRecord) -> DNSRecord:
+    async def _dnspython_resolve(self, request: DNSRecord, protocol: str) -> DNSRecord:
         question = request.questions[0]
-        record_type = QTYPE[question.qtype]
-        if record_type not in {"A", "AAAA"}:
-            raise UpstreamError(f"System resolver fallback supports A and AAAA, not {record_type}")
-        family = socket.AF_INET if record_type == "A" else socket.AF_INET6
-        addresses = await asyncio.get_running_loop().run_in_executor(
-            None, lambda: socket.getaddrinfo(str(question.qname).rstrip("."), None, family, socket.SOCK_STREAM)
+        resolver = dns.asyncresolver.Resolver()
+        resolver.timeout = self.timeout
+        resolver.lifetime = self.timeout * (self.retries + 1)
+        answer = await resolver.resolve(
+            str(question.qname),
+            dns.rdatatype.to_text(question.qtype),
+            tcp=protocol == "TCP",
+            raise_on_no_answer=False,
         )
-        reply = request.reply()
-        seen = set()
-        for item in addresses:
-            address = item[4][0]
-            if address not in seen:
-                seen.add(address)
-                reply.add_answer(RR(question.qname, question.qtype, ttl=60, rdata=A(address) if record_type == "A" else AAAA(address)))
-        if not seen:
-            raise UpstreamError("System resolver returned no addresses")
-        return reply
+        response = DNSRecord.parse(answer.response.to_wire())
+        response.header.id = request.header.id
+        return response
     async def _udp(self, raw, server):
         loop=asyncio.get_running_loop(); sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); sock.setblocking(False)
         try:
