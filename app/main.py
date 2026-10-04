@@ -41,6 +41,15 @@ async def lifespan(app):
     yield; await app.state.simulation.stop(); await app.state.dns.stop()
 app=FastAPI(title="Mini DNS Server with Live Caching Analytics",version="1.0.0",lifespan=lifespan)
 app.add_middleware(CORSMiddleware,allow_origins=settings.cors,allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
+@app.get('/')
+async def root():
+    return envelope({
+        "service": "Mini DNS Server with Live Caching Analytics",
+        "status": "online",
+        "health": "/api/health",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+    })
 @app.get('/api/health')
 async def health(): return envelope({"status":"healthy" if not app.state.dns_error else "degraded","dns_server":"running" if not app.state.dns_error else "unavailable","dns_error":app.state.dns_error,"cache":"running","database":"connected","simulation":app.state.simulation.state})
 @app.post('/api/dns/query')
