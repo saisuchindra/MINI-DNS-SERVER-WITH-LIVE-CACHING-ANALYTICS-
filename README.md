@@ -68,3 +68,14 @@ https://your-frontend.onrender.com
 The service listens on Render's required `$PORT` and exposes the HTTP API, WebSocket analytics endpoint, and API documentation. Render Web Services do not expose arbitrary public UDP ports, so the DNS listener is available only inside the service; use the HTTP `/api/dns/query` endpoint for public queries.
 
 SQLite storage on the free service is ephemeral. Use a managed database and update `DATABASE_URL` if query history must survive redeploys.
+
+## Deploy the frontend to Vercel
+
+Create a new Vercel project from this repository and set **Root Directory** to `frontend`. Use the default Next.js framework settings and set these production environment variables:
+
+```text
+NEXT_PUBLIC_API_URL=https://mini-dns-api-7zpj.onrender.com
+NEXT_PUBLIC_WS_URL=wss://mini-dns-api-7zpj.onrender.com/ws/analytics
+```
+
+After Vercel gives you a public URL, update the Render service's `CORS_ORIGINS` environment variable to that URL, then redeploy the Render service. This allows browser requests from the dashboard to reach the API.
