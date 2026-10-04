@@ -2,7 +2,6 @@
 import asyncio
 from dnslib import DNSRecord
 import dns.asyncresolver
-import dns.exception
 import dns.rdatatype
 
 class UpstreamError(Exception): pass
@@ -19,7 +18,7 @@ class UpstreamResolver:
                     # asyncio.TimeoutError has an empty string representation; retain the type.
                     errors.append(f"{server}: {type(e).__name__}: {str(e) or 'no response'}")
         # Some hosted networks block direct DNS on port 53. Use dnspython's
-        # configured resolver as a fallback so every supported record type works.
+        # system-configured resolver as a fallback so every supported record type works.
         try:
             return await self._dnspython_resolve(request, protocol), "dnspython"
         except Exception as e:
